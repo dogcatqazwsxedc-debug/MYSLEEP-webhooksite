@@ -1,15 +1,28 @@
 const express = require("express");
-
 const app = express();
+
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Webhook server is running!");
+const VERIFY_TOKEN = "mysleep_verify_token";
+
+/* Webhook verification (required by WhatsApp) */
+app.get("/webhook", (req, res) => {
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
+
+  if (mode && token === VERIFY_TOKEN) {
+    console.log("Webhook verified!");
+    res.status(200).send(challenge);
+  } else {
+    res.sendStatus(403);
+  }
 });
 
+/* Receive WhatsApp messages */
 app.post("/webhook", (req, res) => {
-  console.log("Webhook received:", req.body);
-  res.status(200).send("Webhook received");
+  console.log("Incoming webhook:", JSON.stringify(req.body, null, 2));
+  res.sendStatus(200);
 });
 
 const PORT = process.env.PORT || 3000;
